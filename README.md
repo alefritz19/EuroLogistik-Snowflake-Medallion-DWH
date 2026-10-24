@@ -1,24 +1,23 @@
-# ❄️ EuroLogistik DACH — Cloud Data Warehouse & Semi-Structured Pipeline on Snowflake
-### **End-to-End Medallion Architecture (Bronze ➔ Silver ➔ Gold) · JSON/IoT Processing (`VARIANT` & `LATERAL FLATTEN`) · Kimball Star Schema · Zero-Copy Cloning & Time Travel**
+# ❄️ EuroLogistik DACH — Cloud Data Warehouse & Pipeline für semistrukturierte Daten auf Snowflake
+### **End-to-End-Medallion-Architektur (Bronze ➔ Silver ➔ Gold) · JSON-/IoT-Verarbeitung (`VARIANT` & `LATERAL FLATTEN`) · Kimball-Sternschema · Zero-Copy Cloning & Time Travel**
 
-[![Snowflake](https://img.shields.io/badge/Snowflake-Data_Cloud_(Enterprise)-29B5E8?style=for-the-badge&logo=snowflake&logoColor=white)](https://achieve.snowflake.com/39919e7c-4de3-46d3-80a5-de041ca1ffc5)
-[![Architecture](https://img.shields.io/badge/Architecture-Medallion_(Bronze_%E2%9E%94_Silver_%E2%9E%94_Gold)-0078D4?style=for-the-badge)](#1-architektur--datenfluss-medallion-modell)
-[![SQL](https://img.shields.io/badge/Snowflake_SQL-VARIANT_%7C_FLATTEN_%7C_QUALIFY-CC2927?style=for-the-badge&logo=databricks&logoColor=white)](./sql/01_EuroLogistik_Medallion_Pipeline.sql)
-[![Status](https://img.shields.io/badge/Build-Production_Verified-2ea44f?style=for-the-badge)](#4-produktions-nachweise--snowflake-screenshots)
+[![Snowflake](https://img.shields.io/badge/Snowflake-Data_Cloud-29B5E8?style=for-the-badge&logo=snowflake&logoColor=white)](https://achieve.snowflake.com/39919e7c-4de3-46d3-80a5-de041ca1ffc5)
+[![Architektur](https://img.shields.io/badge/Architektur-Medallion_(Bronze_%E2%9E%94_Silver_%E2%9E%94_Gold)-0078D4?style=for-the-badge)](#1-architektur--datenfluss-medallion-modell)
+[![SQL](https://img.shields.io/badge/Snowflake_SQL-VARIANT_%7C_FLATTEN_%7C_QUALIFY-CC2927?style=for-the-badge&logo=snowflake&logoColor=white)](./sql/01_EuroLogistik_Medallion_Pipeline.sql)
 
 ---
 
-## 📋 Executive Summary & Business Case
+## 📋 Zusammenfassung & Geschäftskontext
 
-Dieses Data-Engineering-Projekt implementiert eine produktionsreife **Cloud-Data-Warehouse-Plattform auf Snowflake** für ein logistisches B2B-Netzwerk in der **DACH-Region (Deutschland, Österreich, Schweiz)**. 
+Dieses Portfolio-Projekt implementiert eine **Cloud-Data-Warehouse-Plattform auf Snowflake** für ein fiktives logistisches B2B-Netzwerk in der **DACH-Region (Deutschland, Österreich, Schweiz)** auf Basis synthetischer Daten.
 
 Ziel der Architektur ist die automatisierte Zusammenführung klassischer **relationaler ERP-Stammdaten** (Kunden, Logistikzentren/Hubs) mit **halbstrukturierten IoT- und Sendungs-Telemetriedaten im JSON-Format** (Temperaturüberwachung für Pharmatransporte, Erschütterungssensorik, mehrteilige Packlisten und SLA-Laufzeiten).
 
-### 🛠️ Zentrale Engineering-Lösungen:
+### 🛠️ Zentrale technische Lösungen:
 * **Hybride Ingestion (`BRONZE_RAW`):** Speicherung relationaler ERP-Tabellen neben tief verschachtelten JSON-Dokumenten im nativen Snowflake-Datentyp `VARIANT` (`PARSE_JSON`).
-* **In-Flight Deduplizierung & Array-Entpackung (`SILVER_CLEAN`):** Eliminierung mehrfach gesendeter Sensor-Events mittels `QUALIFY ROW_NUMBER() OVER (...) = 1` sowie Aufbrechen verschachtelter Positions-Arrays (`items`) in relationale Zeilen über `LATERAL FLATTEN`.
-* **Dimensional Modeling nach Kimball (`GOLD_DWH`):** Aufbau eines analytischen Sternschemas (`DIM_KUNDEN`, `DIM_LOGISTIKZENTREN`, `FCT_LIEFERUNGEN`) inklusive automatischer SLA-Laufzeitbewertung (`SLA_EINGEHALTEN` vs. `SLA_UEBERSCHRITTEN`) und Storno-Isolierung (`IST_UMSATZRELEVANT`).
-* **Snowflake Enterprise Governance:** Einsatz von **Zero-Copy Cloning** (`CREATE DATABASE ... CLONE`) für speicherneutrale Entwicklungs-Umgebungen sowie **Time Travel** (`UNDROP TABLE`) zur verzögerungsfreien Disaster-Recovery.
+* **Deduplizierung & Array-Entpackung beim Laden (`SILVER_CLEAN`):** Eliminierung mehrfach gesendeter Sensor-Events mittels `QUALIFY ROW_NUMBER() OVER (...) = 1` sowie Aufbrechen verschachtelter Positions-Arrays (`items`) in relationale Zeilen über `LATERAL FLATTEN`.
+* **Dimensionale Modellierung nach Kimball (`GOLD_DWH`):** Aufbau eines analytischen Sternschemas (`DIM_KUNDEN`, `DIM_LOGISTIKZENTREN`, `FCT_LIEFERUNGEN`) inklusive automatischer SLA-Laufzeitbewertung (`SLA_EINGEHALTEN` vs. `SLA_UEBERSCHRITTEN`) und Storno-Isolierung (`IST_UMSATZRELEVANT`).
+* **Snowflake-Governance-Funktionen:** Einsatz von **Zero-Copy Cloning** (`CREATE DATABASE ... CLONE`) für speicherneutrale Entwicklungsumgebungen sowie **Time Travel** (`UNDROP TABLE`) zur sofortigen Wiederherstellung gelöschter Tabellen.
 
 ---
 
@@ -117,7 +116,7 @@ LATERAL FLATTEN(input => s.PAYLOAD:items) f;
 
 ---
 
-## 3. Validierte Gold-Layer Ergebnisse (DACH Management Report)
+## 3. Validierte Ergebnisse im Gold Layer (DACH-Management-Report)
 
 Die abschließende Aggregation über die Faktentabelle `GOLD_DWH.FCT_LIEFERUNGEN` isoliert stornierte Sendungen (`IST_UMSATZRELEVANT = 1`) und weist die Logistik-KPIs nach Zielland aus:
 
@@ -129,9 +128,9 @@ Die abschließende Aggregation über die Faktentabelle `GOLD_DWH.FCT_LIEFERUNGEN
 
 ---
 
-## 4. Produktions-Nachweise & Snowflake Screenshots
+## 4. Ausführungsnachweise (Snowflake-Screenshots)
 
-### A) Gold-Layer KPI-Aggregation & Star Schema Validierung
+### A) KPI-Aggregation im Gold Layer & Validierung des Sternschemas
 ![Gold Layer KPI Reporting](./assets/01_gold_layer_kpi_report.png)
 
 ### B) Array-Normalisierung (`LATERAL FLATTEN` — 13 Sendungspositionen)
@@ -150,6 +149,6 @@ EuroLogistik-Snowflake-Medallion-DWH/
 │   └── 01_EuroLogistik_Medallion_Pipeline.sql   # Vollständiges End-to-End SQL-Skript (Bronze -> Silver -> Gold)
 ├── docs/
 │   └── SQL_Architektur_und_Trainer.md           # Technische Dokumentation der Snowflake-SQL-Patterns
-├── assets/                                      # Verifizierte Snowflake-Ausführungsnachweise
+├── assets/                                      # Snowflake-Ausführungsnachweise (Screenshots)
 └── README.md                                    # Projektübersicht & Architektur-Dokumentation
 ```
